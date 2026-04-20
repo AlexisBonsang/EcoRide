@@ -1,6 +1,6 @@
 function Landing() {
     return (
-        <h1>Page d'acceuil connecté</h1>
+        <h1>Page Landing</h1>
     )
 }
 

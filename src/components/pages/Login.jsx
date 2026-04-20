@@ -12,7 +12,7 @@ function Login() {
 
     return (
         <>
-        <h1>Page d'acceuil connecté</h1>
+        <h1>Page login</h1>
         <GoogleLogin 
         onSuccess={(credentialResponse) => {        // Reçoit le token JWT de l'utilisateur connecté
             console.log(jwtDecode(credentialResponse.credential))   // Affiche les infos utilisateur     
