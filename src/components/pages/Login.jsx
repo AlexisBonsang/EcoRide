@@ -13,6 +13,10 @@ function Login() {
     return (
         <>
         <h1>Page login</h1>
+        <form>
+            <input type="text" name="login" placeholder="Nom d'utilisateur" />
+            <input type="password" name="password" placeholder="Mot de passe" />
+        </form>
         <GoogleLogin 
         onSuccess={(credentialResponse) => {        // Reçoit le token JWT de l'utilisateur connecté
             console.log(jwtDecode(credentialResponse.credential))   // Affiche les infos utilisateur     
