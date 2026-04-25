@@ -1,30 +1,22 @@
-import { GoogleLogin } from '@react-oauth/google'
-import { jwtDecode } from 'jwt-decode'
-import { useNavigate } from 'react-router-dom'
-
-
-
-// Bouton google
 const GoogleLoginButton = () => {
-    const navigate = useNavigate()
 
-    function handleSuccess(credentialResponse) {
-        console.log(jwtDecode(credentialResponse.credential))
-        navigate("/Landing")
-    }
-
-    function handleError() {
-        console.log("Connexion échouée")
+    function handleGoogleLogin() {
+        window.location.href = "http://localhost:8000/auth/social/google"
     }
 
     return (
-        <div className="flex justify-center overflow-hidden rounded-full">
-            <GoogleLogin
-                onSuccess={handleSuccess}
-                onError={handleError}
-                theme="filled_blue"
-                shape="pill"
-            />
+        <div className="flex justify-center">
+            <button
+                onClick={handleGoogleLogin}
+                className="flex items-center gap-3 bg-white text-gray-700 border border-gray-300 rounded-full px-6 py-2 hover:shadow-md transition"
+            >
+                <img
+                    src="https://www.svgrepo.com/show/475656/google-color.svg"
+                    alt="Google"
+                    className="w-5 h-5"
+                />
+                <span className="text-sm font-medium">Continuer avec Google</span>
+            </button>
         </div>
     )
 }

@@ -1,18 +1,45 @@
-import { GoogleLogin, googleLogout } from "@react-oauth/google"       // Composant qui rend la connexion
-import { jwtDecode } from "jwt-decode"                  // Composant qui récupère les infos de l'utilisateur via le token JSON
-import { useNavigate } from "react-router-dom"          // Redirection vers page d'acceuil
-import GoogleLoginButton from "../button/Button"       // Composant du bouton de connexion Google
+import { useNavigate, Link } from "react-router-dom"
+import { useState } from "react"
+import GoogleLoginButton from "../button/Button"
+import { useAuth } from "../contexts/AuthContext"
 
 function Login() {
 
-    const navigate = useNavigate()      // Hook reactRouter
+    const navigate = useNavigate()
+    const { setAuth } = useAuth()
 
-    function handleLogout() {           // Gestion déconnexion
-        googleLogout()
+    const [email, setEmail] = useState("")
+    const [password, setPassword] = useState("")
+    const [error, setError] = useState("")
+
+    async function handleSubmit(e) {
+        e.preventDefault()
+        setError("")
+
+        const loginResponse = await fetch("http://localhost:8000/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password })
+        })
+
+        if (!loginResponse.ok) {
+            setError("Email ou mot de passe incorrect.")
+            return
+        }
+
+        const { token } = await loginResponse.json()
+
+        const userResponse = await fetch("http://localhost:8000/api/users/me", {
+            headers: { "Authorization": `Bearer ${token}` }
+        })
+
+        const user = await userResponse.json()
+        setAuth(user, token)
+        navigate("/landing")
     }
 
     return (
-<div className="min-h-screen flex items-center justify-center bg-white-950 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-white-950 p-4">
 
             {/* Cadre principal */}
             <div className="card w-full max-w-sm bg-white/5 backdrop-blur-xl border border-white/15 shadow-2xl">
@@ -25,7 +52,7 @@ function Login() {
                     </div>
 
                     {/* Champs du formulaire */}
-                    <form className="space-y-4">
+                    <form className="space-y-4" onSubmit={handleSubmit}>
                         <div className="space-y-1">
                             <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">
                                 Identifiant
@@ -34,6 +61,8 @@ function Login() {
                                 type="text"
                                 name="login"
                                 placeholder="Adresse mail"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 className="input w-full bg-white/10 border border-white/20 text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none rounded-xl"
                             />
                         </div>
@@ -46,9 +75,15 @@ function Login() {
                                 type="password"
                                 name="password"
                                 placeholder="••••••••"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
                                 className="input w-full bg-white/10 border border-white/20 text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none rounded-xl"
                             />
                         </div>
+
+                        {error && (
+                            <p className="text-red-400 text-sm text-center">{error}</p>
+                        )}
 
                         <button
                             type="submit"
@@ -62,6 +97,13 @@ function Login() {
 
                     {/* Bouton Google */}
                     <div><GoogleLoginButton /></div>
+
+                    <p className="text-center text-sm text-gray-400">
+                        Pas encore de compte ?{" "}
+                        <Link to="/register" className="text-emerald-400 hover:underline">
+                            S'inscrire
+                        </Link>
+                    </p>
                 </div>
             </div>
 

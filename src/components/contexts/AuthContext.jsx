@@ -1,20 +1,31 @@
 import { createContext, useState, useContext } from "react";
 
-const AuthContext = createContext();        // Crée un nouvel objet context
-export const AuthProvider = ({ children }) => {    // Gère l'état de l'utilisateur et les méthodes pour le mettre à jour
-  const [user, setUser] = useState(null);   // Etat qui stock l'utilisateur, null par défaut
-  const setAuth = (authUser) => {           // Récupère et sotck le nouveau utilisateur
+const AuthContext = createContext();
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
+
+  const setAuth = (authUser, authToken) => {
     setUser(authUser);
+    setToken(authToken);
   };
+
   const setUserData = (data) => {
     setUser({ ...data });
   };
+
+  const logout = () => {
+    setUser(null);
+    setToken(null);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, setAuth, setUserData }}>
+    <AuthContext.Provider value={{ user, token, setAuth, setUserData, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
-// Custom hook for accessing the AuthContext
-export const useAuth = () => useContext(AuthContext); 
+
+export const useAuth = () => useContext(AuthContext);
 

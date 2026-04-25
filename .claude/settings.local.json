@@ -8,7 +8,18 @@
       "Read(//c/Users/Win/Desktop/1.Projet AK/Ecoride-Back-Java-en-solo/**)",
       "Read(//mnt/c/Users/Win/Desktop/1.Projet AK/**)",
       "Read(//c/Users/Win/Desktop/**)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(curl -s \"https://api.github.com/repos/NicolasBonfond/AKN_EcoRide/branches\")",
+      "Read(//c//**)",
+      "Read(//c/Program Files/**)",
+      "Bash(php bin/console cache:clear)",
+      "Bash(php -r \"echo php_ini_loaded_file\\(\\) . PHP_EOL; echo ini_get\\('curl.cainfo'\\) . PHP_EOL; echo ini_get\\('openssl.cafile'\\) . PHP_EOL;\")",
+      "Bash(php -r \"require 'vendor/autoload.php'; echo \\\\GuzzleHttp\\\\Utils::defaultCaBundle\\(\\);\")",
+      "Bash(curl -o cacert.pem https://curl.se/ca/cacert.pem)",
+      "Bash(php bin/console debug:container --show-private)",
+      "Bash(php bin/console debug:container knpu)",
+      "Bash(php -r ' *)"
     ]
   }
 }
