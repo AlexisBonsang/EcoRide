@@ -1,6 +1,7 @@
 import { useNavigate, Link } from "react-router-dom"
 import { useState } from "react"
 import GoogleLoginButton from "../button/Button"
+import FacebookButton from "../button/FacebookButton"
 import { useAuth } from "../contexts/AuthContext"
 
 function Login() {
@@ -27,14 +28,14 @@ function Login() {
             return
         }
 
-        const { token } = await loginResponse.json()
+        const { token, refresh_token } = await loginResponse.json()
 
         const userResponse = await fetch("http://localhost:8000/api/users/me", {
             headers: { "Authorization": `Bearer ${token}` }
         })
 
         const user = await userResponse.json()
-        setAuth(user, token)
+        setAuth(user, token, refresh_token)
         navigate("/landing")
     }
 
@@ -95,8 +96,11 @@ function Login() {
                     {/* Séparateur */}
                     <div className="divider text-gray-600 text-xs">OU</div>
 
-                    {/* Bouton Google */}
-                    <div><GoogleLoginButton /></div>
+                    {/* Boutons sociaux */}
+                    <div className="space-y-3">
+                        <GoogleLoginButton />
+                        <FacebookButton />
+                    </div>
 
                     <p className="text-center text-sm text-gray-400">
                         Pas encore de compte ?{" "}

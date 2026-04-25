@@ -1,6 +1,8 @@
 import { useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext"
+import GoogleLoginButton from "../button/Button"
+import FacebookButton from "../button/FacebookButton"
 
 function Register() {
     const navigate = useNavigate()
@@ -35,14 +37,14 @@ function Register() {
             return
         }
 
-        const { token } = data
+        const { token, refresh_token } = data
 
         const userRes = await fetch("http://localhost:8000/api/users/me", {
             headers: { Authorization: `Bearer ${token}` },
         })
         const user = await userRes.json()
 
-        setAuth(user, token)
+        setAuth(user, token, refresh_token)
         navigate("/landing")
     }
 
@@ -116,6 +118,13 @@ function Register() {
                             Créer mon compte
                         </button>
                     </form>
+
+                    <div className="divider text-gray-600 text-xs">OU</div>
+
+                    <div className="space-y-3">
+                        <GoogleLoginButton label="S'inscrire avec Google" />
+                        <FacebookButton label="S'inscrire avec Facebook" />
+                    </div>
 
                     <p className="text-center text-sm text-gray-400">
                         Déjà un compte ?{" "}

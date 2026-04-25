@@ -9,6 +9,7 @@ function OAuthCallback() {
     useEffect(() => {
         const params = new URLSearchParams(window.location.search)
         const token = params.get("token")
+        const refreshToken = params.get("refresh_token")
 
         if (!token) {
             navigate("/login")
@@ -20,7 +21,7 @@ function OAuthCallback() {
         })
             .then((res) => res.json())
             .then((user) => {
-                setAuth(user, token)
+                setAuth(user, token, refreshToken)
                 navigate("/landing")
             })
             .catch(() => navigate("/login"))
