@@ -1,14 +1,8 @@
-import { useNavigate } from "react-router-dom"
 import { useAuth } from "../components/contexts/AuthContext"
+import Navbar from "../components/layout/Navbar"
 
 export default function Layout({ children }) {
-    const { user, logout } = useAuth()
-    const navigate = useNavigate()
-
-    function handleLogout() {
-        logout()
-        navigate("/login")
-    }
+    const { user } = useAuth()
 
     return (
         <div className="background relative min-h-screen">
@@ -24,19 +18,7 @@ export default function Layout({ children }) {
             />
 
             {/* Navbar */}
-            {user && (
-                <div className="relative z-20 flex justify-end items-center px-6 py-4">
-                    <div className="flex items-center gap-4">
-                        <span className="text-sm text-gray-300">{user.email}</span>
-                        <button
-                            onClick={handleLogout}
-                            className="btn btn-sm bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl"
-                        >
-                            Se déconnecter
-                        </button>
-                    </div>
-                </div>
-            )}
+            {user && <Navbar />}
 
             {/* Contenu */}
             <div className="relative z-10">

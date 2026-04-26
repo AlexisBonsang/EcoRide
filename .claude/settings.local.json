@@ -19,7 +19,9 @@
       "Bash(curl -o cacert.pem https://curl.se/ca/cacert.pem)",
       "Bash(php bin/console debug:container --show-private)",
       "Bash(php bin/console debug:container knpu)",
-      "Bash(php -r ' *)"
+      "Bash(php -r ' *)",
+      "WebFetch(domain:)",
+      "Bash(grep -E '\\\\.\\(pdf|docx|doc|md|txt\\)$')"
     ]
   }
 }

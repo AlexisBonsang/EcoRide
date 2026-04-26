@@ -45,7 +45,7 @@ function Register() {
         const user = await userRes.json()
 
         setAuth(user, token, refresh_token)
-        navigate("/landing")
+        navigate("/profile")
     }
 
     return (
