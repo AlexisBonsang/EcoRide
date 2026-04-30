@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 function Home() {
+    const { user, token } = useAuth()
+    if (user && token) return <Navigate to="/landing" replace />
 
-    const [count, setCount] = useState(0);  
-    useEffect(() => {                       
+    const [count, setCount] = useState(0);
+    useEffect(() => {
         const interval = setInterval(() => {
             setCount(prevCount => prevCount + 1);
         }, 1000);
-          return () => clearInterval(0);
+        return () => clearInterval(interval);
     }, []);
     return (      
         <div className="relative min-h-screen">

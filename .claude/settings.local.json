@@ -21,7 +21,18 @@
       "Bash(php bin/console debug:container knpu)",
       "Bash(php -r ' *)",
       "WebFetch(domain:)",
-      "Bash(grep -E '\\\\.\\(pdf|docx|doc|md|txt\\)$')"
+      "Bash(grep -E '\\\\.\\(pdf|docx|doc|md|txt\\)$')",
+      "Bash(xargs cat *)",
+      "Bash(python -c ' *)",
+      "Bash(pip install *)",
+      "Bash(npx vite *)",
+      "Bash(node -e \"require\\('docx'\\); console.log\\('ok'\\)\")",
+      "Bash(node -e \"const {Document}=require\\('docx'\\); console.log\\('ok'\\)\")",
+      "Bash(npm root *)",
+      "Bash(NODE_PATH=\"C:\\\\Users\\\\Win\\\\AppData\\\\Roaming\\\\npm\\\\node_modules\" node -e \"const {Document}=require\\('docx'\\); console.log\\('ok'\\)\")",
+      "Bash(NODE_PATH=\"C:\\\\Users\\\\Win\\\\AppData\\\\Roaming\\\\npm\\\\node_modules\" node generate_auth_report.js)",
+      "Bash(python -c \"import os; s=os.path.getsize\\('C:/Users/Win/Desktop/CoursInfo4/Intégration/Rapport_Authentification_EcoRide.docx'\\); print\\(f'{s//1024} Ko'\\)\")",
+      "Bash(NODE_PATH=\"C:\\\\Users\\\\Win\\\\AppData\\\\Roaming\\\\npm\\\\node_modules\" node generate_presentation.js)"
     ]
   }
 }

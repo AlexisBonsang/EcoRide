@@ -13,6 +13,7 @@ function Login() {
     const [password, setPassword] = useState("")
     const [error, setError] = useState("")
 
+    {/* BP Login Soumission formulaire */}
     async function handleSubmit(e) {
         e.preventDefault()
         setError("")
@@ -80,6 +81,12 @@ function Login() {
                                 onChange={(e) => setPassword(e.target.value)}
                                 className="input w-full bg-white/10 border border-white/20 text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none rounded-xl"
                             />
+                        </div>
+
+                        <div className="flex justify-end">
+                            <Link to="/forgot-password" className="text-xs text-emerald-400 hover:underline">
+                                Mot de passe oublié ?
+                            </Link>
                         </div>
 
                         {error && (

@@ -4,6 +4,8 @@ import { useAuth } from "../contexts/AuthContext"
 import GoogleLoginButton from "../button/Button"
 import FacebookButton from "../button/FacebookButton"
 
+const PASSWORD_REGEX = /^(?=.*\d)(?=.*[^a-zA-Z0-9]).{7,}$/
+
 function Register() {
     const navigate = useNavigate()
     const { setAuth } = useAuth()
@@ -11,6 +13,7 @@ function Register() {
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [passwordConfirm, setPasswordConfirm] = useState("")
+    const [rgpd, setRgpd] = useState(false)
     const [errors, setErrors] = useState({})
     const [globalError, setGlobalError] = useState("")
 
@@ -18,6 +21,19 @@ function Register() {
         e.preventDefault()
         setErrors({})
         setGlobalError("")
+
+        const localErrors = {}
+
+        if (!PASSWORD_REGEX.test(password)) {
+            localErrors.password = ["Le mot de passe doit contenir au moins 7 caractères, 1 chiffre et 1 caractère spécial."]
+        }
+        if (password !== passwordConfirm) {
+            localErrors.passwordConfirm = ["Les mots de passe ne correspondent pas."]
+        }
+        if (Object.keys(localErrors).length > 0) {
+            setErrors(localErrors)
+            return
+        }
 
         const res = await fetch("http://localhost:8000/auth/register/standard", {
             method: "POST",
@@ -68,6 +84,7 @@ function Register() {
                                 placeholder="exemple@email.com"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
+                                required
                                 className="input w-full bg-white/10 border border-white/20 text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none rounded-xl"
                             />
                             {errors.email && (
@@ -84,8 +101,12 @@ function Register() {
                                 placeholder="••••••••"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
+                                required
                                 className="input w-full bg-white/10 border border-white/20 text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none rounded-xl"
                             />
+                            <p className="text-gray-500 text-xs">
+                                Minimum 7 caractères, dont 1 chiffre et 1 caractère spécial.
+                            </p>
                             {errors.password && (
                                 <p className="text-red-400 text-xs">{errors.password.join(" ")}</p>
                             )}
@@ -100,6 +121,7 @@ function Register() {
                                 placeholder="••••••••"
                                 value={passwordConfirm}
                                 onChange={(e) => setPasswordConfirm(e.target.value)}
+                                required
                                 className="input w-full bg-white/10 border border-white/20 text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none rounded-xl"
                             />
                             {errors.passwordConfirm && (
@@ -107,13 +129,29 @@ function Register() {
                             )}
                         </div>
 
+                        <label className="flex items-start gap-3 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={rgpd}
+                                onChange={e => setRgpd(e.target.checked)}
+                                required
+                                className="checkbox checkbox-sm mt-0.5 border-white/30"
+                            />
+                            <span className="text-xs text-gray-400 leading-relaxed">
+                                J'accepte le traitement de mes données personnelles conformément à la{" "}
+                                <span className="text-emerald-400">politique de confidentialité</span>{" "}
+                                d'EcoRide (RGPD).
+                            </span>
+                        </label>
+
                         {globalError && (
                             <p className="text-red-400 text-sm text-center">{globalError}</p>
                         )}
 
                         <button
                             type="submit"
-                            className="btn w-full bg-emerald-500 hover:bg-emerald-600 text-white border-none rounded-xl shadow-lg shadow-emerald-500/20 mt-2"
+                            disabled={!rgpd}
+                            className="btn w-full bg-emerald-500 hover:bg-emerald-600 text-white border-none rounded-xl shadow-lg shadow-emerald-500/20 mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Créer mon compte
                         </button>

@@ -7,6 +7,7 @@ const NAV_LINKS = [
     { to: "/my-rides", label: "Mes trajets" },
     { to: "/propose", label: "Proposer un trajet" },
     { to: "/soft-rides", label: "Mobilité douce" },
+    { to: "/my-cars", label: "Mes véhicules" },
 ]
 
 const ADMIN_LINKS = [

@@ -2,8 +2,11 @@ import { useState, useEffect } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext"
 import { isProfileComplete } from "../auth/RequireProfileComplete"
+import CarForm from "../cars/CarForm"
 
 const TABS = ["Informations", "Mon véhicule", "Compte"]
+
+const PASSWORD_REGEX = /^(?=.*\d)(?=.*[^a-zA-Z0-9]).{7,}$/
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -51,6 +54,7 @@ function TabInfos({ token, user: authUser, setUserData, requireCompletion }) {
     const [saving, setSaving] = useState(false)
     const [success, setSuccess] = useState(false)
     const [errors, setErrors] = useState({})
+    const [showIban, setShowIban] = useState(false)
 
     useEffect(() => {
         fetch("http://localhost:8000/api/users/me", {
@@ -166,11 +170,23 @@ function TabInfos({ token, user: authUser, setUserData, requireCompletion }) {
             </Field>
 
             <Field label="IBAN">
-                <Input
-                    value={form.iban}
-                    onChange={e => setForm(f => ({ ...f, iban: e.target.value }))}
-                    placeholder="FR76 1234 5678 9012 3456 7890 189"
-                />
+                <div className="relative">
+                    <input
+                        type={showIban ? "text" : "password"}
+                        value={form.iban}
+                        onChange={e => setForm(f => ({ ...f, iban: e.target.value }))}
+                        placeholder="FR76 1234 5678 9012 3456 7890 189"
+                        className="input w-full bg-white/10 border border-white/20 text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none rounded-xl pr-10"
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowIban(v => !v)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition text-xs"
+                        title={showIban ? "Masquer" : "Afficher"}
+                    >
+                        {showIban ? "🙈" : "👁"}
+                    </button>
+                </div>
                 {errors.iban && <p className="text-red-400 text-xs">{errors.iban}</p>}
             </Field>
 
@@ -188,7 +204,7 @@ function TabInfos({ token, user: authUser, setUserData, requireCompletion }) {
                 <Input
                     value={form.profilePicture}
                     onChange={e => setForm(f => ({ ...f, profilePicture: e.target.value }))}
-                    placeholder="https://..."
+                    placeholder="https://…"
                 />
             </Field>
 
@@ -211,15 +227,11 @@ function TabInfos({ token, user: authUser, setUserData, requireCompletion }) {
 // ─── Onglet Véhicule ─────────────────────────────────────────────────────────
 
 function TabVehicule({ token }) {
-    const [car, setCar] = useState(null)
-    const [form, setForm] = useState({
-        model: "", brand: "", licensePlate: "",
-        seats: 1, engine: "", insurance: "", purchaseDate: "",
-    })
+    const [cars, setCars] = useState([])
     const [loading, setLoading] = useState(true)
-    const [saving, setSaving] = useState(false)
-    const [success, setSuccess] = useState(false)
-    const [errors, setErrors] = useState({})
+    const [editingId, setEditingId] = useState(null)
+    const [adding, setAdding] = useState(false)
+    const [deletingId, setDeletingId] = useState(null)
 
     useEffect(() => {
         fetch("http://localhost:8000/api/users/me", {
@@ -227,155 +239,193 @@ function TabVehicule({ token }) {
         })
             .then(r => r.json())
             .then(data => {
-                const existing = data.cars?.[0] ?? null
-                setCar(existing)
-                if (existing) {
-                    setForm({
-                        model: existing.model ?? "",
-                        brand: existing.brand ?? "",
-                        licensePlate: existing.licensePlate ?? "",
-                        seats: existing.seats ?? 1,
-                        engine: existing.engine ?? "",
-                        insurance: existing.insurance ?? "",
-                        purchaseDate: existing.purchaseDate ? existing.purchaseDate.slice(0, 10) : "",
-                    })
-                }
+                setCars(data.cars ?? [])
                 setLoading(false)
             })
     }, [token])
 
-    async function handleSubmit(e) {
-        e.preventDefault()
-        setSaving(true)
-        setErrors({})
-        setSuccess(false)
-
-        const body = { ...form, seats: parseInt(form.seats) }
-        if (!body.purchaseDate) delete body.purchaseDate
-        if (!body.engine) delete body.engine
-        if (!body.insurance) delete body.insurance
-
-        const url = car
-            ? `http://localhost:8000/api/users/me/car/${car.id}`
-            : "http://localhost:8000/api/users/me/car"
-        const method = car ? "PUT" : "POST"
-
-        const res = await fetch(url, {
-            method,
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(body),
+    function handleSaved(saved) {
+        setCars(prev => {
+            const exists = prev.find(c => c.id === saved.id)
+            return exists ? prev.map(c => c.id === saved.id ? saved : c) : [...prev, saved]
         })
+        setEditingId(null)
+        setAdding(false)
+    }
 
-        const data = await res.json()
-
-        if (!res.ok) {
-            setErrors(data.violations
-                ? Object.fromEntries(data.violations.map(v => [v.propertyPath, v.message]))
-                : { global: data["hydra:description"] ?? "Une erreur est survenue." }
-            )
-        } else {
-            setCar(data)
-            setSuccess(true)
-            setTimeout(() => setSuccess(false), 3000)
+    async function handleDelete(id) {
+        setDeletingId(id)
+        const res = await fetch(`http://localhost:8000/api/users/me/car/${id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+        })
+        if (res.ok || res.status === 204) {
+            setCars(prev => prev.filter(c => c.id !== id))
         }
-        setSaving(false)
+        setDeletingId(null)
     }
 
     if (loading) return <p className="text-gray-400 text-sm">Chargement…</p>
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-5 max-w-lg">
-            <p className="text-sm text-gray-400">
-                {car ? "Modifiez les informations de votre véhicule." : "Ajoutez votre véhicule pour proposer des trajets."}
-            </p>
+        <div className="space-y-4 max-w-lg">
+            {cars.map(car => (
+                <div key={car.id}>
+                    {editingId === car.id ? (
+                        <CarForm token={token} editingCar={car} onSaved={handleSaved} onCancel={() => setEditingId(null)} />
+                    ) : (
+                        <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                            <div className="flex items-start justify-between gap-2">
+                                <div>
+                                    <p className="text-white font-medium">
+                                        {car.brand ? `${car.brand} ` : ""}{car.model}
+                                    </p>
+                                    <p className="text-xs text-gray-400 mt-0.5">
+                                        {car.licensePlate} · {car.seats} places
+                                        {car.engine ? ` · ${car.engine}` : ""}
+                                    </p>
+                                    {car.insurance && (
+                                        <p className="text-xs text-gray-500 mt-0.5">Assurance : {car.insurance}</p>
+                                    )}
+                                </div>
+                                <div className="flex gap-2 shrink-0">
+                                    <button
+                                        onClick={() => setEditingId(car.id)}
+                                        className="btn btn-xs bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-lg"
+                                    >
+                                        Modifier
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(car.id)}
+                                        disabled={deletingId === car.id}
+                                        className="btn btn-xs bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded-lg"
+                                    >
+                                        {deletingId === car.id ? "…" : "Supprimer"}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            ))}
 
-            <div className="grid grid-cols-2 gap-4">
-                <Field label="Marque">
-                    <Input
-                        value={form.brand}
-                        onChange={e => setForm(f => ({ ...f, brand: e.target.value }))}
-                        placeholder="Renault"
-                    />
-                    {errors.brand && <p className="text-red-400 text-xs">{errors.brand}</p>}
-                </Field>
-                <Field label="Modèle *">
-                    <Input
-                        required
-                        value={form.model}
-                        onChange={e => setForm(f => ({ ...f, model: e.target.value }))}
-                        placeholder="Clio"
-                    />
-                    {errors.model && <p className="text-red-400 text-xs">{errors.model}</p>}
-                </Field>
-            </div>
+            {cars.length === 0 && !adding && (
+                <p className="text-sm text-gray-400">Aucun véhicule enregistré.</p>
+            )}
 
-            <div className="grid grid-cols-2 gap-4">
-                <Field label="Immatriculation *">
-                    <Input
-                        required
-                        value={form.licensePlate}
-                        onChange={e => setForm(f => ({ ...f, licensePlate: e.target.value }))}
-                        placeholder="AB-123-CD"
-                    />
-                    {errors.licensePlate && <p className="text-red-400 text-xs">{errors.licensePlate}</p>}
-                </Field>
-                <Field label="Nombre de places *">
-                    <Input
-                        required
-                        type="number"
-                        min={1}
-                        max={9}
-                        value={form.seats}
-                        onChange={e => setForm(f => ({ ...f, seats: e.target.value }))}
-                    />
-                    {errors.seats && <p className="text-red-400 text-xs">{errors.seats}</p>}
-                </Field>
-            </div>
-
-            <Field label="Motorisation">
-                <Input
-                    value={form.engine}
-                    onChange={e => setForm(f => ({ ...f, engine: e.target.value }))}
-                    placeholder="Essence, Électrique, Hybride…"
-                />
-            </Field>
-
-            <Field label="Assurance">
-                <Input
-                    value={form.insurance}
-                    onChange={e => setForm(f => ({ ...f, insurance: e.target.value }))}
-                    placeholder="Numéro ou compagnie d'assurance"
-                />
-            </Field>
-
-            <Field label="Date d'achat">
-                <Input
-                    type="date"
-                    value={form.purchaseDate}
-                    onChange={e => setForm(f => ({ ...f, purchaseDate: e.target.value }))}
-                />
-            </Field>
-
-            {errors.global && <p className="text-red-400 text-sm">{errors.global}</p>}
-
-            <div className="flex items-center gap-3">
+            {adding ? (
+                <CarForm token={token} editingCar={null} onSaved={handleSaved} onCancel={() => setAdding(false)} />
+            ) : (
                 <button
-                    type="submit"
-                    disabled={saving}
-                    className="btn bg-emerald-500 hover:bg-emerald-600 text-white border-none rounded-xl"
+                    onClick={() => setAdding(true)}
+                    className="btn btn-sm bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 rounded-xl"
                 >
-                    {saving ? "Enregistrement…" : car ? "Mettre à jour" : "Ajouter le véhicule"}
+                    + Ajouter un véhicule
                 </button>
-                {success && <span className="text-emerald-400 text-sm">✓ Véhicule enregistré</span>}
-            </div>
-        </form>
+            )}
+        </div>
     )
 }
 
 // ─── Onglet Compte ───────────────────────────────────────────────────────────
+
+function ChangePasswordForm({ token }) {
+    const [form, setForm] = useState({ currentPassword: "", newPassword: "", newPasswordConfirm: "" })
+    const [saving, setSaving] = useState(false)
+    const [success, setSuccess] = useState(false)
+    const [errors, setErrors] = useState({})
+
+    async function handleSubmit(e) {
+        e.preventDefault()
+        setErrors({})
+        setSuccess(false)
+
+        const localErrors = {}
+        if (!PASSWORD_REGEX.test(form.newPassword)) {
+            localErrors.newPassword = "Le mot de passe doit contenir au moins 7 caractères, 1 chiffre et 1 caractère spécial."
+        }
+        if (form.newPassword !== form.newPasswordConfirm) {
+            localErrors.newPasswordConfirm = "Les mots de passe ne correspondent pas."
+        }
+        if (Object.keys(localErrors).length > 0) {
+            setErrors(localErrors)
+            return
+        }
+
+        setSaving(true)
+        const res = await fetch("http://localhost:8000/api/users/me/password", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+                currentPassword: form.currentPassword,
+                newPassword: form.newPassword,
+            }),
+        })
+
+        if (res.ok) {
+            setSuccess(true)
+            setForm({ currentPassword: "", newPassword: "", newPasswordConfirm: "" })
+            setTimeout(() => setSuccess(false), 3000)
+        } else {
+            const data = await res.json().catch(() => ({}))
+            setErrors({ global: data.message ?? data["hydra:description"] ?? "Une erreur est survenue." })
+        }
+        setSaving(false)
+    }
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4">
+            <h3 className="text-white font-semibold">Changer de mot de passe</h3>
+            <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Mot de passe actuel</label>
+                <input
+                    type="password"
+                    value={form.currentPassword}
+                    onChange={e => setForm(f => ({ ...f, currentPassword: e.target.value }))}
+                    required
+                    placeholder="••••••••"
+                    className="input w-full bg-white/10 border border-white/20 text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none rounded-xl"
+                />
+            </div>
+            <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Nouveau mot de passe</label>
+                <input
+                    type="password"
+                    value={form.newPassword}
+                    onChange={e => setForm(f => ({ ...f, newPassword: e.target.value }))}
+                    required
+                    placeholder="••••••••"
+                    className="input w-full bg-white/10 border border-white/20 text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none rounded-xl"
+                />
+                <p className="text-gray-500 text-xs">Minimum 7 caractères, dont 1 chiffre et 1 caractère spécial.</p>
+                {errors.newPassword && <p className="text-red-400 text-xs">{errors.newPassword}</p>}
+            </div>
+            <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Confirmer le nouveau mot de passe</label>
+                <input
+                    type="password"
+                    value={form.newPasswordConfirm}
+                    onChange={e => setForm(f => ({ ...f, newPasswordConfirm: e.target.value }))}
+                    required
+                    placeholder="••••••••"
+                    className="input w-full bg-white/10 border border-white/20 text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none rounded-xl"
+                />
+                {errors.newPasswordConfirm && <p className="text-red-400 text-xs">{errors.newPasswordConfirm}</p>}
+            </div>
+            {errors.global && <p className="text-red-400 text-sm">{errors.global}</p>}
+            <div className="flex items-center gap-3">
+                <button
+                    type="submit"
+                    disabled={saving}
+                    className="btn btn-sm bg-emerald-500 hover:bg-emerald-600 text-white border-none rounded-xl"
+                >
+                    {saving ? "Enregistrement…" : "Modifier le mot de passe"}
+                </button>
+                {success && <span className="text-emerald-400 text-sm">✓ Mot de passe mis à jour</span>}
+            </div>
+        </form>
+    )
+}
 
 function TabCompte({ token, logout }) {
     const navigate = useNavigate()
@@ -394,13 +444,15 @@ function TabCompte({ token, logout }) {
 
     return (
         <div className="space-y-8 max-w-lg">
-            {/* Email non modifiable ici */}
-            <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-1">
-                <p className="text-xs text-gray-400 uppercase tracking-wider">Adresse email</p>
-                <p className="text-white text-sm">La modification de l'email se fait via les paramètres de sécurité.</p>
+            <ChangePasswordForm token={token} />
+
+            <div className="border-t border-white/10 pt-8 space-y-4">
+                <h3 className="text-white font-semibold">Adresse email</h3>
+                <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                    <p className="text-sm text-gray-400">La modification de l'email se fait via le support EcoRide.</p>
+                </div>
             </div>
 
-            {/* Suppression du compte */}
             <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 space-y-3">
                 <h3 className="text-red-400 font-semibold">Supprimer mon compte</h3>
                 <p className="text-sm text-gray-400">
@@ -453,8 +505,17 @@ export default function Profile() {
 
             {/* En-tête */}
             <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 text-2xl font-bold">
-                    {user?.firstName?.[0]?.toUpperCase() ?? user?.email?.[0]?.toUpperCase()}
+                <div className="w-16 h-16 rounded-full overflow-hidden bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 text-2xl font-bold shrink-0">
+                    {user?.profilePicture ? (
+                        <img
+                            src={user.profilePicture}
+                            alt="Photo de profil"
+                            className="w-full h-full object-cover"
+                            onError={e => { e.target.style.display = "none" }}
+                        />
+                    ) : (
+                        user?.firstName?.[0]?.toUpperCase() ?? user?.email?.[0]?.toUpperCase()
+                    )}
                 </div>
                 <div>
                     <h1 className="text-2xl font-bold text-white">
